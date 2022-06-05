@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+#
+# file: agent_nextcloud_data
+#
+# created: 22/05/2022
+#
+# Author: Martin Hasin
+# email: martin.hasin@gmail.com
+#
+#<<<check_mk>>>
+#Version: 24.0.0.12
+#Host Address: nextcloud.local
+#<<<nextcloud_data:sep(59)>>>
+#Status;ok
+#debug;no
+#apps_num_installed;72
+#num_updates_available;0
+#storage_num_users;5
+#storage_num_files;76740
+#storage_num_storages;438
+#storage_num_storages_local;0
+#storage_num_storages_home;437
+#storage_num_storages_other;1
+#num_shares;6
+#num_shares_user;0
+#num_shares_groups;0
+#num_shares_link;6
+#num_shares_mail;0
+#num_shares_room;0
+#num_shares_link_no_password;6
+#num_fed_shares_sent;0
+#num_fed_shares_received;0
+#permissions_3_17;6
+#last5minutes;2
+#last1hour;2
+#last24hours;2
+
+
+import getopt
+import sys
+
+import requests
+from requests.auth import HTTPBasicAuth
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def usage():
+    sys.stderr.write("""Check_MK nextcloud_API Agent
+
+USAGE: agent_nextcloud_data -u [username] -p [password] HOST
+       agent_nextcloud_data -h
+
+ARGUMENTS:
+  HOST           Host name or IP address of the nextcloud server
+  
+
+OPTIONS:
+  -h, --help                Show this help message and exit
+  -u, --username            Sets the username
+  -p, --password            Sets the password
+  --no-cert-check           Disables the checking of the servers ssl certificate
+  --debug                   Debug mode: let Python exceptions come through
+""")
+
+
+short_options = 'hu:p:'
+long_options = [
+    'help', 'username=', 'password=', 'debug', 'no-cert-check'
+               ]
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], short_options, long_options)
+
+except getopt.GetoptError as err:
+    sys.stderr.write("%s\n" % err)
+    sys.exit(1)
+
+opt_debug = False
+opt_username = ""
+opt_password = ""
+opt_verify = True
+
+
+for opt, arg in opts:
+    if opt in ['--debug']:
+        opt_debug = True
+    elif opt in ['-u', '--username']:
+        opt_username = arg
+    elif opt in ['-p', '--password']:
+        opt_password = arg
+    elif opt in ['--no-cert-check']:
+        opt_verify = False
+    elif opt in ['-h', '--help']:
+        usage()
+        sys.exit(0)
+
+if len(args) == 1:
+    host_address = args[0]
+elif not args:
+    sys.stderr.write("ERROR: No host given.\n")
+    sys.exit(1)
+else:
+    sys.stderr.write("ERROR: Please specify exactly one host.\n")
+    sys.exit(1)
+
+################
+# define url's #
+################
+
+url = 'https://' + host_address + '/ocs/v2.php/apps/serverinfo/api/v1/info?format=json'      # my URL     
+response = requests.get(url, auth=HTTPBasicAuth(opt_username, opt_password), verify= opt_verify)
+
+
+data = response.json()
+
+#########################
+# generate agent output #
+#########################
+
+#print(data)
+print("<<<check_mk>>>")
+#print("Version: %s" % (data_system_version['version']))
+#print("BuildDate: %s" % (data_system_version['releasedate']))
+#print("Architecture: Appliance")
+#print("AgentOS: %s" % (data_system_version['product']))
+#print("Host Address: %s" % host_address)
+print("Version: %s" % data['ocs']['data']['nextcloud']['system']['version'])
+print("Host Address: %s" % host_address)
+
+
+
+
+
+
+print("<<<nextcloud_data:sep(59)>>>")
+
+if "status" in data['ocs']['meta']:
+	print("Status;%s" % data['ocs']['meta']['status'])
+if "debug" in data['ocs']['data']['nextcloud']['system']:
+	print("debug;%s" % data['ocs']['data']['nextcloud']['system']['debug'])
+if "num_installed" in data['ocs']['data']['nextcloud']['system']['apps']:
+	print("apps_num_installed;%s" % data['ocs']['data']['nextcloud']['system']['apps']['num_installed'])
+if "num_updates_available" in data['ocs']['data']['nextcloud']['system']['apps']:
+	print("num_updates_available;%s" % data['ocs']['data']['nextcloud']['system']['apps']['num_updates_available'])
+if "num_users" in data['ocs']['data']['nextcloud']['storage']:
+	print("storage_num_users;%s" % data['ocs']['data']['nextcloud']['storage']['num_users'])
+if "num_files" in data['ocs']['data']['nextcloud']['storage']:
+	print("storage_num_files;%s" % data['ocs']['data']['nextcloud']['storage']['num_files'])
+if "num_storages" in data['ocs']['data']['nextcloud']['storage']:
+	print("storage_num_storages;%s" % data['ocs']['data']['nextcloud']['storage']['num_storages'])
+if "num_storages_local" in data['ocs']['data']['nextcloud']['storage']:
+	print("storage_num_storages_local;%s" % data['ocs']['data']['nextcloud']['storage']['num_storages_local'])
+if "num_storages_home" in data['ocs']['data']['nextcloud']['storage']:
+	print("storage_num_storages_home;%s" % data['ocs']['data']['nextcloud']['storage']['num_storages_home'])
+if "num_storages_other" in data['ocs']['data']['nextcloud']['storage']:
+	print("storage_num_storages_other;%s" % data['ocs']['data']['nextcloud']['storage']['num_storages_other'])
+
+
+if "num_shares" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_shares;%s" % data['ocs']['data']['nextcloud']['shares']['num_shares'])
+if "num_shares_user" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_shares_user;%s" % data['ocs']['data']['nextcloud']['shares']['num_shares_user'])
+if "num_shares_groups" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_shares_groups;%s" % data['ocs']['data']['nextcloud']['shares']['num_shares_groups'])
+if "num_shares_link" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_shares_link;%s" % data['ocs']['data']['nextcloud']['shares']['num_shares_link'])
+if "num_shares_mail" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_shares_mail;%s" % data['ocs']['data']['nextcloud']['shares']['num_shares_mail'])
+if "num_shares_room" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_shares_room;%s" % data['ocs']['data']['nextcloud']['shares']['num_shares_room'])
+if "num_shares_link_no_password" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_shares_link_no_password;%s" % data['ocs']['data']['nextcloud']['shares']['num_shares_link_no_password'])
+if "num_fed_shares_sent" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_fed_shares_sent;%s" % data['ocs']['data']['nextcloud']['shares']['num_fed_shares_sent'])
+if "num_fed_shares_received" in data['ocs']['data']['nextcloud']['shares']:
+	print("num_fed_shares_received;%s" % data['ocs']['data']['nextcloud']['shares']['num_fed_shares_received'])
+if "permissions_3_17" in data['ocs']['data']['nextcloud']['shares']:
+	print("permissions_3_17;%s" % data['ocs']['data']['nextcloud']['shares']['permissions_3_17'])
+
+
+if "last5minutes" in data['ocs']['data']['activeUsers']:
+	print("last5minutes;%s" % data['ocs']['data']['activeUsers']['last5minutes'])
+if "last1hour" in data['ocs']['data']['activeUsers']:
+	print("last1hour;%s" % data['ocs']['data']['activeUsers']['last1hour'])
+if "last24hours" in data['ocs']['data']['activeUsers']:
+	print("last24hours;%s" % data['ocs']['data']['activeUsers']['last24hours'])
+
+
