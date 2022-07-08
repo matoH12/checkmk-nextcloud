@@ -17,8 +17,13 @@ def agent_nextcloud_data_arguments(params, hostname, ipaddress):
 
     if params.get("no_cert_check"):
         args += " --no-cert-check"
+    if 'hostnamenextcloud' in params:
+        args += " " + quote_shell_string(params["hostnamenextcloud"])
+    else:
+        args += " " + quote_shell_string(hostname)
 
-    args += " " + quote_shell_string(hostname)
+    #args += " " + quote_shell_string(params["hostnamenextcloud"])
+    #args += " " + quote_shell_string(hostname)
     #args += " " + quote_shell_string(ipaddress)
     return args
 
